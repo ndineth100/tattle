@@ -1,8 +1,8 @@
-[{
-  id: '/#12poiajdspfoif',
-  name: 'Andrew',
-  room: 'The Office Fans'
-}]
+// [{
+//   id: '/#12poiajdspfoif',
+//   name: 'Andrew',
+//   room: 'The Office Fans'
+// }]
 
 // addUser(id, name, room)
 // removeUser(id)
@@ -15,6 +15,7 @@ class Users {
   }
   addUser (id, name, room) {
     var user = {id, name, room};
+    console.log(JSON.stringify(user));
     this.users.push(user);
     return user;
   }

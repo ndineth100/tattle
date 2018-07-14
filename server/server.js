@@ -2,6 +2,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const socketIO = require('socket.io');
+var FifoArray = require('fifo-array');
 
 const {generateMessage, generateLocationMessage} = require('./utils/message');
 const {isRealString} = require('./utils/validation');
@@ -13,31 +14,43 @@ var app = express();
 var server = http.createServer(app);
 var io = socketIO(server);
 var users = new Users();
+var fifoArray = new FifoArray(100);
 
 app.use(express.static(publicPath));
 
 io.on('connection', (socket) => {
   console.log('New user connected');
+  socket.emit('connect');
+  console.log('connect');
 
   socket.on('add user', (params) => {
     if (!isRealString(params.name)) {
       return;
     }
-
+    console.log("Socket id: "+socket.id);
+    console.log("Name: "+params.name);
     socket.join('tattle');
     users.removeUser(socket.id);
     users.addUser(socket.id, params.name, 'tattle');
 
+    console.log(JSON.stringify(users));
     io.to('tattle').emit('updateUserList', users.getUserList('tattle'));
-    socket.emit('join', {'numUsers' : users.getUserList('tattle').length});//generateMessage('Admin', 'Welcome to the chat app'));
+    socket.emit('join', {'messageList' : fifoArray});//generateMessage('Admin', 'Welcome to the chat app'));
     socket.broadcast.to('tattle').emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
+    //fifoArray.push(generateMessage('Admin', `${params.name} has joined.`));
   });
 
   socket.on('createMessage', (message) => {
     var user = users.getUser(socket.id);
+    console.log("message: "+message.text);
+    console.log("avatar: "+message.avatar);
+
+    console.log(JSON.stringify(user));
 
     if (user && isRealString(message.text)) {
-        socket.broadcast.to('tattle').emit('newMessage', generateMessage(user.name, message.text));
+        socket.broadcast.to('tattle').emit('newMessage', generateMessage(user.name, message.text, message.avatar));
+        fifoArray.push(generateMessage(user.name, message.text, message.avatar));
+        console.log("message broadcasted.");
     }
 
   });
@@ -52,7 +65,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     var user = users.removeUser(socket.id);
-
+    console.log("Disconnected: "+socket.id);
     if (user) {
       io.to('tattle').emit('updateUserList', users.getUserList('tattle'));
       io.to('tattle').emit('newMessage', generateMessage('Admin', `${user.name} has left.`));
