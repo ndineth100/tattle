@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
     var user = users.getUser(socket.id);
 
     if (user && isRealString(message.text)) {
-      io.to('tattle').emit('newMessage', generateMessage(user.name, message.text));
+        socket.broadcast.to('tattle').emit('newMessage', generateMessage(user.name, message.text));
     }
 
   });
