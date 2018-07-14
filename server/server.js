@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
     console.log(JSON.stringify(users));
     io.to('tattle').emit('updateUserList', users.getUserList('tattle'));
     socket.emit('join', {'messageList' : fifoArray});//generateMessage('Admin', 'Welcome to the chat app'));
-    socket.broadcast.to('tattle').emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
+    socket.broadcast.to('tattle').emit('newMessage', generateMessage('Admin', `${params.name} has joined.`, 1));
     //fifoArray.push(generateMessage('Admin', `${params.name} has joined.`));
   });
 
@@ -44,12 +44,21 @@ io.on('connection', (socket) => {
     var user = users.getUser(socket.id);
     console.log("message: "+message.text);
     console.log("avatar: "+message.avatar);
+    console.log("type: "+message.anonymous);
 
     console.log(JSON.stringify(user));
 
     if (user && isRealString(message.text)) {
-        socket.broadcast.to('tattle').emit('newMessage', generateMessage(user.name, message.text, message.avatar));
-        fifoArray.push(generateMessage(user.name, message.text, message.avatar));
+      if(message.anonymous === 1) {
+          console.log("Annonymous");
+          socket.broadcast.to('tattle').emit('newMessage', generateMessage('anonymous', message.text, message.avatar));
+          fifoArray.push(generateMessage('anonymous', message.text, message.avatar));
+      }
+      else{
+          console.log("Not Annonymous");
+          socket.broadcast.to('tattle').emit('newMessage', generateMessage(user.name, message.text, message.avatar));
+          fifoArray.push(generateMessage(user.name, message.text, message.avatar));
+      }
         console.log("message broadcasted.");
     }
 
